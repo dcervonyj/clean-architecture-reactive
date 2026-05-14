@@ -9,13 +9,15 @@ import { MobXReactiveContextProps } from './MobXReactiveContextProps';
 
 export class MobXReactiveConnector<Context extends MobXReactiveContext<any>> {
     private reactContext?: ReactContext<Context>;
+    private lastBoundContext: Context | undefined;
 
     autoBindContext(context: Context): void {
-        Object.values(context).forEach((it) => {
-            if (typeof it === 'object') {
-                autoBind(it);
-            }
-        });
+        if (this.lastBoundContext === context) {
+            return;
+        }
+
+        autoBind(context.view);
+        this.lastBoundContext = context;
     }
 
     Provider: React.FC<{ context: Context; children?: React.ReactNode | React.ReactElement | React.ReactElement[] }> =
@@ -28,6 +30,19 @@ export class MobXReactiveConnector<Context extends MobXReactiveContext<any>> {
 
             return <this.reactContext.Provider value={context}>{children}</this.reactContext.Provider>;
         });
+
+    useMobXReactive(): MobXReactiveContextProps<Context> {
+        if (!this.reactContext) {
+            throw new Error('useMobXReactive must be called within a Provider');
+        }
+
+        const context = useContext(this.reactContext);
+
+        return {
+            ...omit(context, 'view'),
+            state: context.view.state,
+        } as unknown as MobXReactiveContextProps<Context>;
+    }
 
     connect = <Props extends Partial<MobXReactiveContextProps<Context>>>(
         Component: React.ComponentType<Props>,

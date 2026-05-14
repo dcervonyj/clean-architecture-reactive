@@ -100,4 +100,6 @@ export interface ReactiveView<FullState extends State<object, object>> {
 
     registerReactions(reactions: Reaction<FullState, any>[]): void;
     deregisterReactions(reactions: Reaction<FullState, any>[]): void;
+
+    deregisterSelectors(): void;
 }
