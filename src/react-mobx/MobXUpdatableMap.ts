@@ -19,8 +19,10 @@ export class MobXUpdatableMap<K, V> implements UpdatableMap<K, V> {
     }
 
     setAll(entries: Iterable<[K, V]>): void {
+        const map = this.getMap();
+
         for (const [key, value] of entries) {
-            this.set(key, value);
+            map.set(key, value);
         }
     }
 
@@ -29,15 +31,19 @@ export class MobXUpdatableMap<K, V> implements UpdatableMap<K, V> {
     }
 
     removeAll(keys: Iterable<K>): void {
+        const map = this.getMap();
+
         for (const key of keys) {
-            this.remove(key);
+            map.delete(key);
         }
     }
 
     removeAllBy(predicate: (key: K, value: V) => boolean): void {
-        for (const [key, value] of this.getMap()) {
+        const map = this.getMap();
+
+        for (const [key, value] of map) {
             if (predicate(key, value)) {
-                this.remove(key);
+                map.delete(key);
             }
         }
     }

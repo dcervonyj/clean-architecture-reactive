@@ -86,4 +86,35 @@ describe('MobXCollectionReactiveView tests', () => {
         //Then
         expect(view.state.myItems).toEqual(expected);
     });
+
+    it('should update item partially', () => {
+        //Given
+        const newA = nextNumber();
+
+        //When
+        view.updateItem('myItems', myItems[0].myId, { a: newA });
+
+        //Then
+        expect(view.state.myItems[0]).toEqual({ ...myItems[0], a: newA });
+        expect(view.state.myItems[1]).toEqual(myItems[1]);
+        expect(view.state.myItems[2]).toEqual(myItems[2]);
+    });
+
+    it('should not throw when updating a non-existent item', () => {
+        //When / Then
+        expect(() => view.updateItem('myItems', nextString(), { a: 99 })).not.toThrow();
+    });
+
+    it('should clear all items from the collection', () => {
+        //When
+        view.clear('myItems');
+
+        //Then
+        expect(view.state.myItems).toHaveLength(0);
+    });
+
+    it('should throw a descriptive error for an unknown collection', () => {
+        //When / Then
+        expect(() => (view as any).getCollection('unknown')).toThrow(/Collection "unknown" is not registered/);
+    });
 });

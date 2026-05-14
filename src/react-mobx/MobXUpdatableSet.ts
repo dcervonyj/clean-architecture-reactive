@@ -19,8 +19,10 @@ export class MobXUpdatableSet<V> implements UpdatableSet<V> {
     }
 
     addAll(values: Iterable<V>): void {
+        const set = this.getSet();
+
         for (const value of values) {
-            this.add(value);
+            set.add(value);
         }
     }
 
@@ -29,15 +31,19 @@ export class MobXUpdatableSet<V> implements UpdatableSet<V> {
     }
 
     removeAll(values: Iterable<V>): void {
+        const set = this.getSet();
+
         for (const value of values) {
-            this.remove(value);
+            set.delete(value);
         }
     }
 
-    removeAllBy(cb: (value: V) => boolean): void {
-        for (const value of this.getSet()) {
-            if (cb(value)) {
-                this.remove(value);
+    removeAllBy(predicate: (value: V) => boolean): void {
+        const set = this.getSet();
+
+        for (const value of set) {
+            if (predicate(value)) {
+                set.delete(value);
             }
         }
     }
