@@ -33,7 +33,6 @@ files it needs for the current task. The pointer table below tells you which:
 | Building or modifying React components, connectors, or providers | this + [ui.md](./ui.md) |
 | Publishing or subscribing to cross-feature events | this + [application.md §Event bus](./application.md#event-bus--publisher--subscriber-ports) + [ui.md §Subscriptions](./ui.md#wiring-subscribers) |
 | Writing tests for use cases, mappers, repositories, selectors | this + [testing.md](./testing.md) |
-| Reviewing naming conventions, TypeScript rules, or class/file layout | this + [code-style.md](./code-style.md) |
 
 ---
 
