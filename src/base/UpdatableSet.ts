@@ -62,7 +62,7 @@ export interface UpdatableSet<V> {
      * console.log(set); // Set { 1, 3, 5 }
      * ```
      * */
-    removeAllBy(cb: (value: V) => boolean): void;
+    removeAllBy(predicate: (value: V) => boolean): void;
 
     /**
      * Removes all values from the set.

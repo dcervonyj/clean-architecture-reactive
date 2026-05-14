@@ -60,15 +60,17 @@ export class MobXUpdatableArray<V> implements UpdatableArray<V> {
     }
 
     removeAll(values: Iterable<V>): boolean {
-        let isSomethingRemoved = false;
+        const toRemove = new Set<V>(values);
+        const array = this.getArray();
+        const original = array.length;
 
-        for (const value of values) {
-            while (this.remove(value)) {
-                isSomethingRemoved = true;
+        for (let i = array.length - 1; i >= 0; i--) {
+            if (toRemove.has(array[i])) {
+                array.splice(i, 1);
             }
         }
 
-        return isSomethingRemoved;
+        return array.length < original;
     }
 
     removeAllBy(predicate: (value: V, index: number) => boolean): void {

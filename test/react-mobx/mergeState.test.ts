@@ -491,4 +491,43 @@ describe('mergeState tests', () => {
             expect(source).toEqual(sourceCopy);
         });
     });
+
+    describe('Prototype pollution prevention', () => {
+        it('should ignore __proto__ key', () => {
+            // Given
+            const target = {};
+            const source = JSON.parse('{"__proto__": {"injected": true}}');
+
+            // When
+            mergeState(target, source, undefined);
+
+            // Then
+            expect((target as any).injected).toBeUndefined();
+            expect(({} as any).injected).toBeUndefined();
+        });
+
+        it('should ignore constructor key', () => {
+            // Given
+            const target = {};
+            const source = JSON.parse('{"constructor": {"prototype": {"injected": true}}}');
+
+            // When
+            mergeState(target, source, undefined);
+
+            // Then
+            expect((target as any).injected).toBeUndefined();
+        });
+
+        it('should ignore prototype key', () => {
+            // Given
+            const target = {};
+            const source = { prototype: { injected: true } };
+
+            // When
+            mergeState(target, source, undefined);
+
+            // Then
+            expect((Object.prototype as any).injected).toBeUndefined();
+        });
+    });
 });
