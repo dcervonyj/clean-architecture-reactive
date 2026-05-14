@@ -63,8 +63,8 @@ When this architecture is a good fit:
 | **Reactive View** | An instance of `ReactiveView<State<Source, Computed>>` from the reactive lib. The single reactive state container backing a feature. |
 | **Source State** | The mutable side of state — set imperatively by use cases via `view.update({...})`. |
 | **Computed State** | The reactively-derived side — produced by selectors registered on the view. Never mutated by hand. |
-| **Selector** | A pure function `(source) => computedSlice` implementing `Selector<FullState, T>`. Registered with `view.register({ key: selector })`. |
-| **Reaction** | A side-effect listener implementing `Reaction<FullState, T>` — pairs `extractReactionCause(state)` with `action(curr, prev)`. Fires when the cause changes. |
+| **Selector** | A class implementing `Selector<FullState, T>` with a single `select(state)` method. Produces a derived (computed) slice from source state. Registered with `view.register({ key: selectorInstance })`. Named `<Subject>Selector`. |
+| **Reaction** | A class implementing `Reaction<FullState, T>` — pairs `extractReactionCause(state)` with `action(curr, prev)`. Fires whenever the extracted cause value changes. Named `<Cause>Reaction`. |
 | **Port** | A plain TypeScript interface in `application/ports/` defining a capability the feature needs. **No `I` prefix.** |
 | **Use Case** | A class with a single public `execute()` method (or domain-appropriate verb) that orchestrates ports. Lives in `application/use-cases/`, flat directory. |
 | **Repository** | The standard name for a data-access port. The interface is `<Thing>Repository`; the implementation gets a tech prefix (`Http<Thing>Repository`, `LocalStorage<Thing>Repository`, etc.). |
@@ -230,6 +230,9 @@ import { TasksRepository } from '../../application/ports/TasksRepository';
 | **Publisher port** | `<Event>Publisher` | `BatchUploadedPublisher` |
 | **Subscriber port** | `<Event>Subscriber` | `BatchUploadedSubscriber` |
 | **Path alias** | `@app/*` → `./src/*` | `@app/tasks/application/...` |
+| **Class file** | PascalCase | `HttpTasksRepository.ts`, `GetTasksUseCase.ts` |
+| **Non-class module** | camelCase | `connector.ts`, `defaultTasksSourceState.ts` |
+| **Folder** | kebab-case | `use-cases/`, `api/repository/` |
 | **Test file** | `<ClassName>.test.ts` | `GetTasksUseCase.test.ts` |
 
 > **No `I` prefix.** Interfaces use plain PascalCase nouns. The implementation is what carries the tech prefix (`Http*`, `MobX*`, `LocalStorage*`, `InMemory*`). This mirrors the reactive lib's own design (`ReactiveView` interface ↔ `MobXReactiveView` impl).
@@ -243,14 +246,16 @@ These rules shape how code is written across the entire app. They keep the layer
 1. **No `let`.** If a variable needs reassignment, extract a private method that returns the final value via `const`, or use a ternary.
 2. **No `any`.** Use `unknown` and narrow, or fix the type.
 3. **No `as` type assertions** unless genuinely unavoidable. A typed mock library (`vitest-mock-extended`, `jest-mock-extended`, `ts-auto-mock`) accepts partial overrides without `as any`.
-4. **No `*Helper` files or classes.** Place logic in a use case, selector, mapper, or presenter — pick the role that fits.
+4. **No `*Helper`, `*Utils`, `*Manager`, or `*Service` names.** Place logic in a use case, selector, mapper, or presenter — pick the role that fits.
 5. **Always braces on `if`/`else`** — never single-line `if (x) doThing();`.
 6. **Blank line before `return`** unless it's the only statement in the block.
 7. **Public methods before private methods** in a class.
-8. **No arrow functions inside method bodies.** Extract as named `private` methods.
+8. **No arrow functions inside method bodies.** Extract as named `private` methods. (Trivial single-expression callbacks like `(x) => x.id` are fine inline.)
 9. **Nullable types, `??`, and `as` are smell signals.** They usually mean the model can be improved. Reach for them only after considering whether the domain shape itself should change.
 10. **Path aliases only** for cross-layer imports — never relative `../../`.
 11. **Components contain no logic.** If a component has more than rendering + prop-passing, lift to a use case / selector / presenter.
+12. **Props type name: `Props<ComponentName>`.** e.g. `PropsTasksContent`, `PropsTasks`. No `I` prefix, no trailing `Props`.
+13. **Test mocks: never `any()` matchers or `as any`.** Use a typed mock library (`vitest-mock-extended`) and pass the exact expected argument. See [code-style.md §13](./code-style.md#13-test-mock-discipline--never-any-never-as-any).
 
 ---
 
@@ -276,10 +281,14 @@ export interface TasksRepository {
 ```ts
 // api/repository/HttpTasksRepository.ts
 export class HttpTasksRepository implements TasksRepository {
-    constructor(private http: HttpClient, private mapper: TaskMapper) {}
+    constructor(
+        private readonly http: HttpClient,
+        private readonly mapper: TaskMapper,
+    ) {}
 
     async getTasks(workspaceId: string): Promise<Task[]> {
         const dto = await this.http.get<TaskDto[]>(`/workspaces/${workspaceId}/tasks`);
+
         return dto.map((d) => this.mapper.fromServer(d));
     }
 
@@ -337,10 +346,12 @@ export type TasksState = State<TasksSourceState, TasksComputedState>;
 
 ```ts
 // config/TasksContext.ts
+import { MobXReactiveView } from 'clean-architecture-reactive';
+
 export function createTasksContext(cfg: TasksContextConfig): TasksContext {
     const view = new MobXReactiveView<TasksState>(defaultTasksSourceState);
-    const repo = new HttpTasksRepository(httpClient, new TaskMapper());
-    const getTasksUseCase = new GetTasksUseCase(view, repo);
+    const tasksRepository = new HttpTasksRepository(cfg.httpClient, new TaskMapper());
+    const getTasksUseCase = new GetTasksUseCase(view, tasksRepository);
 
     view.register({
         activeCount: new ActiveTaskCountSelector(),
@@ -357,6 +368,7 @@ export function createTasksContext(cfg: TasksContextConfig): TasksContext {
 // config/Tasks.tsx
 export const Tasks: React.FC<PropsTasks> = ({ workspaceId }) => {
     const context = useMemo(() => createTasksContext({ workspaceId }), [workspaceId]);
+
     return <Provider value={context}><TasksContent /></Provider>;
 };
 ```
