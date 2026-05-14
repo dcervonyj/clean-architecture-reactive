@@ -27,6 +27,7 @@ import { ComputedOf, SourceOf, State } from '../base/State';
 
 export class MobXReactiveView<FullState extends State<object, object>> implements ReactiveView<FullState> {
     private reactionDisposers = new WeakMap<Reaction<FullState, any>, () => void>();
+    private selectorDisposers: Array<() => void> = [];
 
     readonly state: FullState;
 
@@ -100,11 +101,16 @@ export class MobXReactiveView<FullState extends State<object, object>> implement
         throw new Error('Unsupported collection type');
     }
 
+    deregisterSelectors(): void {
+        this.selectorDisposers.forEach((d) => d());
+        this.selectorDisposers = [];
+    }
+
     private registerSelectors(selectors: Selectors<FullState>): void {
         forEach(selectors, (selector, name) => {
             let prevComputed: ComputedOf<FullState>[keyof ComputedOf<FullState>] | undefined;
 
-            autorun(() => {
+            const disposer = autorun(() => {
                 const computedPart = selector.select(this.state);
 
                 runInAction(() => {
@@ -113,20 +119,25 @@ export class MobXReactiveView<FullState extends State<object, object>> implement
 
                 prevComputed = computedPart;
             });
+
+            this.selectorDisposers.push(disposer);
         });
     }
 
     private cloneDeep<T>(value: T): T {
+        if (value === null || typeof value !== 'object') {
+            return value;
+        }
+
         return cloneDeepWith(value, (val) => {
             if (isObservableMap(val)) {
-                return cloneDeepWith(new Map(val));
+                return new Map(val);
             }
-
             if (isObservableSet(val)) {
-                return cloneDeepWith(new Set(val));
+                return new Set(val);
             }
 
-            return cloneDeepWith(val);
+            return undefined;
         });
     }
 }

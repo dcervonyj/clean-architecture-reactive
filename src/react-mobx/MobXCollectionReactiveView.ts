@@ -19,11 +19,14 @@ export class MobXCollectionReactiveView<
     extends MobXReactiveView<FullState>
     implements CollectionsReactiveView<FullState, CollectionsList>
 {
+    private collectionsMap: Map<keyof CollectionsList, CollectionSettings<CollectionsList, keyof CollectionsList>>;
+
     constructor(
         defaultSourceState: Required<SourceOf<FullState>>,
-        private collections: CollectionSettings<CollectionsList, keyof CollectionsList>[],
+        collections: CollectionSettings<CollectionsList, keyof CollectionsList>[],
     ) {
         super(defaultSourceState);
+        this.collectionsMap = new Map(collections.map((c) => [c.collectionName, c]));
         makeObservable(this, {
             pushItem: action,
             updateItem: action,
@@ -63,16 +66,13 @@ export class MobXCollectionReactiveView<
         Item extends CollectionsList[Collection],
         Id extends keyof Item,
     >(collection: Collection, id: Item[Id]): void {
-        const item = this.getItem(collection, id);
-
-        if (!item) {
-            return;
-        }
-
+        const idKey = this.getCollection(collection).idKey as unknown as Id;
         const collectionState = this.getCollectionState<Collection, Item>(collection);
-        const index = collectionState.indexOf(item);
+        const index = collectionState.findIndex((it) => it[idKey] === id);
 
-        collectionState.splice(index, 1);
+        if (index !== -1) {
+            collectionState.splice(index, 1);
+        }
     }
 
     clear<Collection extends keyof CollectionsList>(collection: Collection): void {
@@ -90,9 +90,13 @@ export class MobXCollectionReactiveView<
     private getCollection<Collection extends keyof CollectionsList>(
         name: Collection,
     ): CollectionSettings<CollectionsList, Collection> {
-        return this.collections.find((it) => it.collectionName === name)! as unknown as CollectionSettings<
-            CollectionsList,
-            Collection
-        >;
+        const settings = this.collectionsMap.get(name);
+
+        if (!settings) {
+            const available = [...this.collectionsMap.keys()].map(String).join(', ');
+            throw new Error(`Collection "${String(name)}" is not registered. Available: ${available}`);
+        }
+
+        return settings as unknown as CollectionSettings<CollectionsList, Collection>;
     }
 }
