@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "outDir": "lib",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "target": "ES2024",
+        "skipLibCheck": true,
+        "lib": ["DOM", "ESNext"],
+        "jsx": "react-jsx",
+        "strict": true,
+        "esModuleInterop": true,
+        "useUnknownInCatchVariables": false,
+        "paths": { "@reactive/*": ["./src/*"] }
+    },
+    "include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "test/**/*.tsx"]
+}

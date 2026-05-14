@@ -1,0 +1,54 @@
+{
+    "name": "clean-architecture-reactive",
+    "type": "module",
+    "version": "0.0.1",
+    "packageManager": "yarn@3.2.2",
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
+    "exports": {
+        ".": {
+            "import": "./lib/index.js",
+            "types": "./lib/index.d.ts"
+        }
+    },
+    "files": [
+        "lib"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "build:lib": "tsc -p tsconfig.build.json",
+        "deploy": "npm publish",
+        "unit:test": "vitest run",
+        "lint": "eslint --ext .ts,.tsx src test",
+        "lint:fix": "eslint --fix --ext .ts,.tsx src test"
+    },
+    "peerDependencies": {
+        "mobx": "^6.15.0",
+        "mobx-react": "^9.2.1",
+        "react": "^19.2.3"
+    },
+    "dependencies": {
+        "auto-bind": "^4.0.0",
+        "lodash-es": "^4.17.23",
+        "mobx-utils": "^6.1.1",
+        "type-fest": "2.19.0"
+    },
+    "devDependencies": {
+        "@types/lodash-es": "^4.17.12",
+        "@types/react": "^19.2.7",
+        "@typescript-eslint/eslint-plugin": "^8.0.0",
+        "@typescript-eslint/parser": "^8.0.0",
+        "eslint": "^9.0.0",
+        "mobx": "^6.15.0",
+        "mobx-react": "^9.2.1",
+        "prettier": "^3.0.0",
+        "react": "^19.2.3",
+        "typescript": "5.9.3",
+        "typescript-eslint": "^8.0.0",
+        "vitest": "^4.0.16"
+    },
+    "resolutions": {
+        "koa": "^3.1.2",
+        "serialize-javascript": "^7.0.3"
+    }
+}
